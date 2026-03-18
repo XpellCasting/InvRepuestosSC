@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Distribuidor {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  contacto  String?
+  email     String?
+  telefono  String?
+  
+  productos Producto[]
+
+  @@map("distribuidor")
+}
+
+model Producto {
+  id              Int                 @id @default(autoincrement())
+  codigo          String              @unique // SKU
+  codigo_barras   String?
+  nombre          String
+  descripcion     String?             @db.Text
+  precio_compra   Decimal             @db.Decimal(10, 2)
+  precio_venta    Decimal             @db.Decimal(10, 2)
+  stock           Int                 @default(0)
+  
+  id_distribuidor Int
+  distribuidor    Distribuidor        @relation(fields: [id_distribuidor], references: [id])
+  
+  vehiculos       ProductoVehiculo[]
+
+  @@map("producto")
+}
+
+model Vehiculo {
+  id        Int                 @id @default(autoincrement())
+  marca     String
+  modelo    String
+  anio      Int?
+  
+  productos ProductoVehiculo[]
+
+  @@map("vehiculo")
+}
+
+// Tabla intermedia para la relación de Muchos a Muchos entre Productos y Vehiculos
+model ProductoVehiculo {
+  id_producto Int
+  id_vehiculo Int
+  
+  producto    Producto @relation(fields: [id_producto], references: [id])
+  vehiculo    Vehiculo @relation(fields: [id_vehiculo], references: [id])
+
+  @@id([id_producto, id_vehiculo])
+  @@map("producto_vehiculo")
+}
