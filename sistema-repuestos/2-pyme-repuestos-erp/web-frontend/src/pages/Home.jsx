@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { PackageSearch, PlusCircle, Search } from 'lucide-react';
 import apiClient from '../api/axios';
 
+export const getFirstImage = (imagenStr) => {
+  if (!imagenStr) return null;
+  try {
+    const parsed = JSON.parse(imagenStr);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : imagenStr;
+  } catch {
+    return imagenStr;
+  }
+};
+
 export const DistribuidorBadge = ({ nombre }) => {
   let bgColor = 'bg-gray-100 text-gray-800';
   if (nombre?.includes('1')) bgColor = 'bg-blue-100 text-blue-800';
@@ -49,18 +59,18 @@ const Home = () => {
         {/* Action: Agregar */}
         <div 
           onClick={() => navigate('/agregar')}
-          className="bg-[#28A745] text-white rounded-xl shadow-sm p-6 cursor-pointer hover:bg-green-700 transition flex flex-col items-center justify-center text-center"
+          className="bg-white text-[#333333] border border-[#E5E7EB] rounded-xl shadow-sm p-6 cursor-pointer hover:bg-gray-50 transition flex flex-col items-center justify-center text-center"
         >
-          <PlusCircle size={48} className="mb-2 opacity-80" />
+          <PlusCircle size={48} className="mb-2 text-gray-400" />
           <h2 className="text-2xl font-bold">Agregar Producto</h2>
         </div>
 
         {/* Action: Buscar */}
         <div 
           onClick={() => navigate('/buscar')}
-          className="bg-[#1a6bcc] text-white rounded-xl shadow-sm p-6 cursor-pointer hover:bg-blue-700 transition flex flex-col items-center justify-center text-center"
+          className="bg-white text-[#333333] border border-[#E5E7EB] rounded-xl shadow-sm p-6 cursor-pointer hover:bg-gray-50 transition flex flex-col items-center justify-center text-center"
         >
-          <Search size={48} className="mb-2 opacity-80" />
+          <Search size={48} className="mb-2 text-gray-400" />
           <h2 className="text-2xl font-bold">Buscar Productos</h2>
         </div>
       </div>
@@ -93,8 +103,8 @@ const Home = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
-                          {prod.imagen ? (
-                            <img className="h-10 w-10 rounded-md object-cover" src={prod.imagen} alt="" />
+                          {getFirstImage(prod.imagen) ? (
+                            <img className="h-10 w-10 rounded-md object-cover" src={getFirstImage(prod.imagen)} alt="" />
                           ) : (
                             <div className="h-10 w-10 rounded-md bg-gray-200 flex items-center justify-center text-gray-500"><PackageSearch size={20}/></div>
                           )}

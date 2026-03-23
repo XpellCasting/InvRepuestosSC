@@ -10,6 +10,7 @@ const ProductDetail = () => {
   const [prod, setProd] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mainImageIdx, setMainImageIdx] = useState(0);
 
   useEffect(() => {
     apiClient.get(`/productos/${id}`)
@@ -25,6 +26,16 @@ const ProductDetail = () => {
   if (error || !prod) return <div className="text-center py-10 text-red-500">{error}</div>;
 
   const componentesArr = prod.componentes ? prod.componentes.split(',').map(s => s.trim()) : [];
+  
+  const imagenes = (() => {
+    if (!prod?.imagen) return [];
+    try {
+      const parsed = JSON.parse(prod.imagen);
+      return Array.isArray(parsed) ? parsed : [prod.imagen];
+    } catch {
+      return [prod.imagen];
+    }
+  })();
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -46,13 +57,30 @@ const ProductDetail = () => {
       <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Left: Image */}
-          <div className="bg-[#F9FAFB] border-b md:border-b-0 md:border-r border-[#E5E7EB] p-8 flex items-center justify-center group overflow-hidden cursor-zoom-in">
-            {prod.imagen ? (
-              <img 
-                src={prod.imagen} 
-                alt={prod.nombre} 
-                className="max-h-96 object-contain transform group-hover:scale-110 transition-transform duration-300" 
-              />
+          <div className="bg-[#F9FAFB] border-b md:border-b-0 md:border-r border-[#E5E7EB] p-8 flex flex-col items-center justify-center">
+            {imagenes.length > 0 ? (
+              <>
+                <div className="w-full h-80 flex items-center justify-center overflow-hidden mb-4 group cursor-zoom-in">
+                  <img 
+                    src={imagenes[mainImageIdx]} 
+                    alt={prod.nombre} 
+                    className="max-h-full object-contain transform group-hover:scale-110 transition-transform duration-300" 
+                  />
+                </div>
+                {imagenes.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto w-full pb-2">
+                    {imagenes.map((imgUrl, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setMainImageIdx(idx)}
+                        className={`flex-shrink-0 h-16 w-16 border-2 rounded-md overflow-hidden ${idx === mainImageIdx ? 'border-[#003366]' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                      >
+                        <img src={imgUrl} alt="thumbnail" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-gray-400 flex flex-col items-center">
                 <AlertTriangle size={64} className="mb-2" />
