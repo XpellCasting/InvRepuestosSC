@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Edit, AlertTriangle, PlusCircle } from 'lucide-react';
 import apiClient from '../api/axios';
 import { DistribuidorBadge } from './Home';
+import { useTicket } from '../context/TicketContext';
+import ProductImage from '../components/ProductImage';
 
 const ProductDetail = () => {
+  const { addToCart } = useTicket();
   const { id } = useParams();
   const navigate = useNavigate();
   const [prod, setProd] = useState(null);
@@ -47,18 +50,13 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Left: Image */}
           <div className="bg-[#F9FAFB] border-b md:border-b-0 md:border-r border-[#E5E7EB] p-8 flex items-center justify-center group overflow-hidden cursor-zoom-in">
-            {prod.imagen ? (
-              <img 
-                src={prod.imagen} 
-                alt={prod.nombre} 
-                className="max-h-96 object-contain transform group-hover:scale-110 transition-transform duration-300" 
-              />
-            ) : (
-              <div className="text-gray-400 flex flex-col items-center">
-                <AlertTriangle size={64} className="mb-2" />
-                <span>Imagen no disponible</span>
-              </div>
-            )}
+            <ProductImage 
+              src={prod.imagen} 
+              alt={prod.nombre} 
+              className="max-h-96 object-contain transform group-hover:scale-110 transition-transform duration-300" 
+              fallbackSize={64}
+              fallbackIcon="alert"
+            />
           </div>
 
           {/* Right: Info */}
@@ -82,6 +80,14 @@ const ProductDetail = () => {
                 ${Number(prod.precio).toLocaleString()}
               </span>
             </div>
+
+            <button 
+              onClick={() => addToCart(prod)}
+              disabled={prod.stock === 0}
+              className="w-full md:w-auto mb-8 flex items-center justify-center gap-2 bg-[#28A745] hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-xl font-bold transition shadow-md text-lg"
+            >
+              <PlusCircle size={24} /> Agregar a Boleta
+            </button>
 
             <div className="space-y-6">
               <div>

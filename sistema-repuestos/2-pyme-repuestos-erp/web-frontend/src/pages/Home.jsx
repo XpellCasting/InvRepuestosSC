@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PackageSearch, PlusCircle, Search } from 'lucide-react';
 import apiClient from '../api/axios';
+import ProductImage from '../components/ProductImage';
 
 export const DistribuidorBadge = ({ nombre }) => {
   let bgColor = 'bg-gray-100 text-gray-800';
@@ -49,18 +50,18 @@ const Home = () => {
         {/* Action: Agregar */}
         <div 
           onClick={() => navigate('/agregar')}
-          className="bg-[#28A745] text-white rounded-xl shadow-sm p-6 cursor-pointer hover:bg-green-700 transition flex flex-col items-center justify-center text-center"
+          className="bg-gray-50 text-gray-800 rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:bg-gray-100 transition flex flex-col items-center justify-center text-center"
         >
-          <PlusCircle size={48} className="mb-2 opacity-80" />
+          <PlusCircle size={48} className="mb-2 text-gray-500" />
           <h2 className="text-2xl font-bold">Agregar Producto</h2>
         </div>
 
         {/* Action: Buscar */}
         <div 
           onClick={() => navigate('/buscar')}
-          className="bg-[#1a6bcc] text-white rounded-xl shadow-sm p-6 cursor-pointer hover:bg-blue-700 transition flex flex-col items-center justify-center text-center"
+          className="bg-gray-50 text-gray-800 rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:bg-gray-100 transition flex flex-col items-center justify-center text-center"
         >
-          <Search size={48} className="mb-2 opacity-80" />
+          <Search size={48} className="mb-2 text-gray-500" />
           <h2 className="text-2xl font-bold">Buscar Productos</h2>
         </div>
       </div>
@@ -92,12 +93,8 @@ const Home = () => {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          {prod.imagen ? (
-                            <img className="h-10 w-10 rounded-md object-cover" src={prod.imagen} alt="" />
-                          ) : (
-                            <div className="h-10 w-10 rounded-md bg-gray-200 flex items-center justify-center text-gray-500"><PackageSearch size={20}/></div>
-                          )}
+                        <div className="h-10 w-10 flex-shrink-0 rounded-md overflow-hidden">
+                          <ProductImage src={prod.imagen} alt="" className="h-full w-full object-cover" fallbackSize={20} fallbackIcon="package" />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{prod.nombre}</div>
