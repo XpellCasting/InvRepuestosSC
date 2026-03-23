@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Minus, X, PackageOpen, Save } from 'lucide-react';
 import apiClient from '../api/axios';
+import { getFirstImage } from './Home';
 
 const CreateTicket = () => {
   const navigate = useNavigate();
@@ -101,7 +102,7 @@ const CreateTicket = () => {
                 className="flex items-center gap-4 bg-gray-50 border border-gray-200 p-3 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition"
               >
                 <div className="h-12 w-12 bg-white flex-shrink-0 border rounded">
-                  {p.imagen ? <img src={p.imagen} className="h-full w-full object-cover"/> : <PackageOpen className="w-full h-full p-2 text-gray-300"/>}
+                  {getFirstImage(p.imagen) ? <img src={getFirstImage(p.imagen)} className="h-full w-full object-cover"/> : <PackageOpen className="w-full h-full p-2 text-gray-300"/>}
                 </div>
                 <div className="flex-1">
                   <h4 className="font-bold text-gray-800 line-clamp-1">{p.nombre}</h4>

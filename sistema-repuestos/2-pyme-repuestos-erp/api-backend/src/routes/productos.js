@@ -1,27 +1,19 @@
 import express from 'express';
-import pool from '../db.js';
+import supabase from '../db.js';
 
 const router = express.Router();
 
-const getProductosConCompatibilidad = async (whereClause = '', queryParams = []) => {
-  const query = `
-    SELECT 
-      p.*, 
-      d.nombre as distribuidor_nombre 
-    FROM productos p 
-    LEFT JOIN distribuidores d ON p.distribuidor_id = d.id 
-    ${whereClause} 
-    ORDER BY p.created_at DESC
-  `;
-  const [productos] = await pool.query(query, queryParams);
-
-  if (productos.length === 0) return [];
+const getProductosConCompatibilidad = async (queryBuilder) => {
+  const { data: productos, error: prodError } = await queryBuilder;
+  if (prodError || !productos || productos.length === 0) return [];
 
   const productoIds = productos.map(p => p.id);
-  const [compatibilidades] = await pool.query(
-    'SELECT * FROM compatibilidad WHERE producto_id IN (?)',
-    [productoIds]
-  );
+  const { data: compatibilidades, error: compError } = await supabase
+    .from('compatibilidad')
+    .select('*')
+    .in('producto_id', productoIds);
+
+  if (compError) throw compError;
 
   return productos.map(p => ({
     ...p,
@@ -33,20 +25,34 @@ const getProductosConCompatibilidad = async (whereClause = '', queryParams = [])
 router.get('/buscar', async (req, res) => {
   try {
     const searchTerm = req.query.q || '';
-    const searchLike = `%${searchTerm}%`;
-
-    const whereClause = `
-      WHERE p.nombre LIKE ? 
-      OR p.codigo_barras LIKE ? 
-      OR p.id IN (
-        SELECT producto_id FROM compatibilidad 
-        WHERE marca LIKE ? OR modelo LIKE ?
-      )
-    `;
-    const params = [searchLike, searchLike, searchLike, searchLike];
     
-    const productos = await getProductosConCompatibilidad(whereClause, params);
-    res.json(productos);
+    // Find matching compatibilities first to simulate subquery IN
+    const { data: compMatches } = await supabase
+      .from('compatibilidad')
+      .select('producto_id')
+      .or(`marca.ilike.%${searchTerm}%,modelo.ilike.%${searchTerm}%`);
+      
+    const matchingProdIds = compMatches ? compMatches.map(c => c.producto_id) : [];
+    
+    let query = supabase
+      .from('productos')
+      .select('*, distribuidores(nombre)')
+      .order('created_at', { ascending: false });
+
+    let orStr = `nombre.ilike.%${searchTerm}%,codigo_barras.ilike.%${searchTerm}%`;
+    if (matchingProdIds.length > 0) {
+      orStr += `,id.in.(${matchingProdIds.join(',')})`;
+    }
+    query = query.or(orStr);
+
+    const productos = await getProductosConCompatibilidad(query);
+    
+    const formatted = productos.map(p => ({
+      ...p,
+      distribuidor_nombre: p.distribuidores ? p.distribuidores.nombre : null
+    }));
+    
+    res.json(formatted);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al buscar productos' });
@@ -56,8 +62,17 @@ router.get('/buscar', async (req, res) => {
 // GET /api/productos
 router.get('/', async (req, res) => {
   try {
-    const productos = await getProductosConCompatibilidad();
-    res.json(productos);
+    const query = supabase
+      .from('productos')
+      .select('*, distribuidores(nombre)')
+      .order('created_at', { ascending: false });
+      
+    const productos = await getProductosConCompatibilidad(query);
+    const formatted = productos.map(p => ({
+      ...p,
+      distribuidor_nombre: p.distribuidores ? p.distribuidores.nombre : null
+    }));
+    res.json(formatted);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al obtener productos' });
@@ -67,11 +82,20 @@ router.get('/', async (req, res) => {
 // GET /api/productos/:id
 router.get('/:id', async (req, res) => {
   try {
-    const productos = await getProductosConCompatibilidad('WHERE p.id = ?', [req.params.id]);
+    const query = supabase
+      .from('productos')
+      .select('*, distribuidores(nombre)')
+      .eq('id', req.params.id);
+      
+    const productos = await getProductosConCompatibilidad(query);
     if (productos.length === 0) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
-    res.json(productos[0]);
+    const p = productos[0];
+    res.json({
+        ...p,
+        distribuidor_nombre: p.distribuidores ? p.distribuidores.nombre : null
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al obtener el producto' });
@@ -80,78 +104,72 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/productos
 router.post('/', async (req, res) => {
-  const connection = await pool.getConnection();
   try {
-    await connection.beginTransaction();
-    
     const { codigo_barras, nombre, descripcion, componentes, precio, stock, imagen, distribuidor_id, compatibilidad } = req.body;
+    const imagenData = Array.isArray(imagen) ? JSON.stringify(imagen) : imagen;
 
-    const [result] = await connection.query(
-      `INSERT INTO productos (codigo_barras, nombre, descripcion, componentes, precio, stock, imagen, distribuidor_id) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [codigo_barras, nombre, descripcion, componentes, precio, stock, imagen, distribuidor_id]
-    );
+    const { data: result, error: insertError } = await supabase
+      .from('productos')
+      .insert([{ codigo_barras, nombre, descripcion, componentes, precio, stock, imagen: imagenData, distribuidor_id }])
+      .select();
 
-    const producto_id = result.insertId;
+    if (insertError) throw insertError;
+    const producto_id = result[0].id;
 
     if (compatibilidad && compatibilidad.length > 0) {
-      const compatibilidadValues = compatibilidad.map(c => [
-        producto_id, c.marca, c.modelo, c.anio_desde, c.anio_hasta, c.motor
-      ]);
-      await connection.query(
-        'INSERT INTO compatibilidad (producto_id, marca, modelo, anio_desde, anio_hasta, motor) VALUES ?',
-        [compatibilidadValues]
-      );
+      const compInserts = compatibilidad.map(c => ({
+        producto_id,
+        marca: c.marca,
+        modelo: c.modelo,
+        anio_desde: c.anio_desde,
+        anio_hasta: c.anio_hasta,
+        motor: c.motor
+      }));
+      const { error: compError } = await supabase.from('compatibilidad').insert(compInserts);
+      if (compError) throw compError;
     }
 
-    await connection.commit();
     res.status(201).json({ id: producto_id, message: 'Producto creado exitosamente' });
   } catch (error) {
-    await connection.rollback();
     console.error(error);
     res.status(500).json({ error: 'Error al crear producto' });
-  } finally {
-    connection.release();
   }
 });
 
 // PUT /api/productos/:id
 router.put('/:id', async (req, res) => {
-  const connection = await pool.getConnection();
   try {
     const { id } = req.params;
-    await connection.beginTransaction();
-
     const { codigo_barras, nombre, descripcion, componentes, precio, stock, imagen, distribuidor_id, compatibilidad } = req.body;
+    const imagenData = Array.isArray(imagen) ? JSON.stringify(imagen) : imagen;
 
-    await connection.query(
-      `UPDATE productos 
-       SET codigo_barras=?, nombre=?, descripcion=?, componentes=?, precio=?, stock=?, imagen=?, distribuidor_id=? 
-       WHERE id=?`,
-      [codigo_barras, nombre, descripcion, componentes, precio, stock, imagen, distribuidor_id, id]
-    );
+    const { error: updateError } = await supabase
+      .from('productos')
+      .update({ codigo_barras, nombre, descripcion, componentes, precio, stock, imagen: imagenData, distribuidor_id })
+      .eq('id', id);
+      
+    if (updateError) throw updateError;
 
     // Replace compatibilidad
-    await connection.query('DELETE FROM compatibilidad WHERE producto_id = ?', [id]);
+    await supabase.from('compatibilidad').delete().eq('producto_id', id);
     
     if (compatibilidad && compatibilidad.length > 0) {
-      const compatibilidadValues = compatibilidad.map(c => [
-        id, c.marca, c.modelo, c.anio_desde, c.anio_hasta, c.motor
-      ]);
-      await connection.query(
-        'INSERT INTO compatibilidad (producto_id, marca, modelo, anio_desde, anio_hasta, motor) VALUES ?',
-        [compatibilidadValues]
-      );
+      const compInserts = compatibilidad.map(c => ({
+        producto_id: id,
+        marca: c.marca,
+        modelo: c.modelo,
+        anio_desde: c.anio_desde,
+        anio_hasta: c.anio_hasta,
+        motor: c.motor
+      }));
+      const { error: compError } = await supabase.from('compatibilidad').insert(compInserts);
+      if (compError) throw compError;
     }
 
-    await connection.commit();
     res.json({ message: 'Producto actualizado exitosamente' });
   } catch (error) {
-    await connection.rollback();
     console.error(error);
     res.status(500).json({ error: 'Error al actualizar producto' });
-  } finally {
-    connection.release();
   }
 });
 
@@ -159,8 +177,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    // CASCADE handles the compatibilidad deletion implicitly
-    await pool.query('DELETE FROM productos WHERE id = ?', [id]);
+    const { error } = await supabase.from('productos').delete().eq('id', id);
+    if (error) throw error;
     res.json({ message: 'Producto eliminado' });
   } catch (error) {
     console.error(error);

@@ -1,12 +1,17 @@
 import express from 'express';
-import pool from '../db.js';
+import supabase from '../db.js';
 
 const router = express.Router();
 
 // GET /api/distribuidores
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM distribuidores ORDER BY nombre ASC');
+    const { data: rows, error } = await supabase
+      .from('distribuidores')
+      .select('*')
+      .order('nombre', { ascending: true });
+
+    if (error) throw error;
     res.json(rows);
   } catch (error) {
     console.error(error);
@@ -21,8 +26,13 @@ router.post('/', async (req, res) => {
     if (!nombre) {
       return res.status(400).json({ error: 'El nombre es obligatorio' });
     }
-    const [result] = await pool.query('INSERT INTO distribuidores (nombre) VALUES (?)', [nombre]);
-    res.status(201).json({ id: result.insertId, nombre });
+    const { data, error } = await supabase
+      .from('distribuidores')
+      .insert([{ nombre }])
+      .select();
+
+    if (error) throw error;
+    res.status(201).json({ id: data[0].id, nombre });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al crear distribuidor' });
@@ -33,11 +43,15 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM distribuidores WHERE id = ?', [id]);
+    const { error } = await supabase
+      .from('distribuidores')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
     res.json({ message: 'Distribuidor eliminado' });
   } catch (error) {
     console.error(error);
-    // Might have foreign key constraints violation, hence status 400 optionally
     res.status(500).json({ error: 'Error al eliminar distribuidor' });
   }
 });

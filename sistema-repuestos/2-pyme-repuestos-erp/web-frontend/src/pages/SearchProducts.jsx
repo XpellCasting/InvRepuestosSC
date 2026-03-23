@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, AlertCircle, Eye, Edit } from 'lucide-react';
 import apiClient from '../api/axios';
-import { DistribuidorBadge } from './Home';
+import { DistribuidorBadge, getFirstImage } from './Home';
 
 const SearchProducts = () => {
   const [query, setQuery] = useState('');
@@ -63,8 +63,8 @@ const SearchProducts = () => {
           {productos.map(prod => (
             <div key={prod.id} className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden hover:shadow-md transition flex flex-col">
               <div className="relative h-48 bg-gray-100 flex-shrink-0">
-                {prod.imagen ? (
-                  <img src={prod.imagen} alt={prod.nombre} className="w-full h-full object-cover" />
+                {getFirstImage(prod.imagen) ? (
+                  <img src={getFirstImage(prod.imagen)} alt={prod.nombre} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">Sin Imagen</div>
                 )}

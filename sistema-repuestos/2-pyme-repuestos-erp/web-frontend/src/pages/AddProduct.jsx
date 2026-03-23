@@ -16,11 +16,12 @@ const AddProduct = () => {
     precio: 0,
     stock: 0,
     distribuidor_id: '',
-    imagen: ''
+    imagen: []
   });
   const [compatibilidad, setCompatibilidad] = useState([]);
   const [distribuidores, setDistribuidores] = useState([]);
   const [imageMode, setImageMode] = useState('URL'); // 'URL' or 'Upload'
+  const [tempUrl, setTempUrl] = useState('');
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [newDistName, setNewDistName] = useState('');
@@ -31,6 +32,11 @@ const AddProduct = () => {
     if (isEditing) {
       apiClient.get(`/productos/${id}`).then(res => {
         const p = res.data;
+        let parsedImages = [];
+        try {
+          parsedImages = typeof p.imagen === 'string' && p.imagen.startsWith('[') ? JSON.parse(p.imagen) : (p.imagen ? [p.imagen] : []);
+        } catch(e) { parsedImages = p.imagen ? [p.imagen] : []; }
+
         setForm({
           codigo_barras: p.codigo_barras,
           nombre: p.nombre,
@@ -39,12 +45,21 @@ const AddProduct = () => {
           precio: p.precio,
           stock: p.stock,
           distribuidor_id: p.distribuidor_id,
-          imagen: p.imagen || ''
+          imagen: parsedImages
         });
         setCompatibilidad(p.compatibilidad || []);
       });
     }
   }, [id, isEditing]);
+
+  const addImage = (imgStr) => {
+    if (!imgStr) return;
+    setForm(prev => ({...prev, imagen: [...prev.imagen, imgStr]}));
+  };
+
+  const removeImage = (idx) => {
+    setForm(prev => ({...prev, imagen: prev.imagen.filter((_, i) => i !== idx)}));
+  };
 
   const fetchDistribuidores = async () => {
     const res = await apiClient.get('/distribuidores');
@@ -222,22 +237,67 @@ const AddProduct = () => {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <div className="flex gap-4 mb-3 border-b border-gray-200 pb-2">
                 <button 
+                  type="button"
                   onClick={() => setImageMode('URL')} 
                   className={`flex items-center gap-1 text-sm font-medium ${imageMode === 'URL' ? 'text-[#003366]' : 'text-gray-500'}`}
                 >
                   <LinkIcon size={16}/> Enlace URL
                 </button>
+                <button 
+                  type="button"
+                  onClick={() => setImageMode('Upload')} 
+                  className={`flex items-center gap-1 text-sm font-medium ${imageMode === 'Upload' ? 'text-[#003366]' : 'text-gray-500'}`}
+                >
+                  <ImageIcon size={16}/> Subir Imagen
+                </button>
               </div>
-              <input
-                type="text"
-                placeholder="https://ejemplo.com/imagen.jpg"
-                value={form.imagen}
-                onChange={e => setForm({...form, imagen: e.target.value})}
-                className="block w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-[#003366] mb-3"
-              />
-              {form.imagen && (
-                <div className="h-32 w-full bg-white rounded flex items-center justify-center border border-gray-200 overflow-hidden">
-                  <img src={form.imagen} alt="Preview" className="h-full object-contain" />
+
+              {imageMode === 'URL' ? (
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    value={tempUrl}
+                    onChange={e => setTempUrl(e.target.value)}
+                    className="block flex-1 px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-[#003366]"
+                  />
+                  <button type="button" onClick={() => { addImage(tempUrl); setTempUrl(''); }} className="bg-[#1a6bcc] text-white px-3 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
+                </div>
+              ) : (
+                <div className="mb-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          addImage(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                      e.target.value = null;
+                    }}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#003366] file:text-white hover:file:bg-[#002244] cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {form.imagen.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {form.imagen.map((imgUrl, idx) => (
+                    <div key={idx} className="relative h-24 w-full bg-white rounded flex items-center justify-center border border-gray-200 overflow-hidden group">
+                      <img src={imgUrl} alt="Preview" className="h-full object-contain" />
+                      <button 
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

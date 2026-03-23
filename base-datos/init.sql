@@ -16,7 +16,7 @@ CREATE TABLE productos (
   componentes TEXT,
   precio DECIMAL(10,2) DEFAULT 0,
   stock INT DEFAULT 0,
-  imagen VARCHAR(500),
+  imagen LONGTEXT,
   distribuidor_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (distribuidor_id) REFERENCES distribuidores(id)
