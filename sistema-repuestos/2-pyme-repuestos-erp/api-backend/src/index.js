@@ -25,6 +25,12 @@ app.use('/api/productos', productosRouter);
 app.use('/api/distribuidores', distribuidoresRouter);
 app.use('/api/tickets', ticketsRouter);
 
-app.listen(PORT, () => {
-  console.log(`API server running on port ${PORT}`);
-});
+// Solo levantar el servidor si se corre local (Docker o Node en PC).
+// En Vercel no es necesario porque Vercel lo llama internamente.
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`API server running on port ${PORT}`);
+  });
+}
+
+export default app;
