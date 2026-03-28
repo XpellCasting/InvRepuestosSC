@@ -60,15 +60,16 @@ const ProductDetail = () => {
       <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Left: Image */}
-<<<<<<< HEAD
-          <div className="bg-[#F9FAFB] border-b md:border-b-0 md:border-r border-[#E5E7EB] p-8 flex flex-col items-center justify-center">
+          <div className="bg-[#F9FAFB] border-b md:border-b-0 md:border-r border-[#E5E7EB] p-8 flex flex-col items-center justify-center relative">
             {imagenes.length > 0 ? (
               <>
                 <div className="w-full h-80 flex items-center justify-center overflow-hidden mb-4 group cursor-zoom-in">
-                  <img 
+                  <ProductImage 
                     src={imagenes[mainImageIdx]} 
                     alt={prod.nombre} 
                     className="max-h-full object-contain transform group-hover:scale-110 transition-transform duration-300" 
+                    fallbackSize={64}
+                    fallbackIcon="alert"
                   />
                 </div>
                 {imagenes.length > 1 && (
@@ -79,7 +80,7 @@ const ProductDetail = () => {
                         onClick={() => setMainImageIdx(idx)}
                         className={`flex-shrink-0 h-16 w-16 border-2 rounded-md overflow-hidden ${idx === mainImageIdx ? 'border-[#003366]' : 'border-transparent opacity-60 hover:opacity-100'}`}
                       >
-                        <img src={imgUrl} alt="thumbnail" className="h-full w-full object-cover" />
+                        <ProductImage src={imgUrl} alt="thumbnail" className="h-full w-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -91,16 +92,6 @@ const ProductDetail = () => {
                 <span>Imagen no disponible</span>
               </div>
             )}
-=======
-          <div className="bg-[#F9FAFB] border-b md:border-b-0 md:border-r border-[#E5E7EB] p-8 flex items-center justify-center group overflow-hidden cursor-zoom-in">
-            <ProductImage 
-              src={prod.imagen} 
-              alt={prod.nombre} 
-              className="max-h-96 object-contain transform group-hover:scale-110 transition-transform duration-300" 
-              fallbackSize={64}
-              fallbackIcon="alert"
-            />
->>>>>>> PruebaLocal
           </div>
 
           {/* Right: Info */}

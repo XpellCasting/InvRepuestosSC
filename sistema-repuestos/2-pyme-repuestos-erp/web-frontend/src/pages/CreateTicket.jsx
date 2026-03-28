@@ -2,12 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Minus, X, PackageOpen, Save } from 'lucide-react';
 import apiClient from '../api/axios';
-<<<<<<< HEAD
-import { getFirstImage } from './Home';
-=======
 import { useTicket } from '../context/TicketContext';
 import ProductImage from '../components/ProductImage';
->>>>>>> PruebaLocal
 
 const CreateTicket = () => {
   const navigate = useNavigate();
@@ -59,13 +55,8 @@ const CreateTicket = () => {
                 onClick={() => handleAddLocal(p)}
                 className="flex items-center gap-4 bg-gray-50 border border-gray-200 p-3 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition"
               >
-<<<<<<< HEAD
-                <div className="h-12 w-12 bg-white flex-shrink-0 border rounded">
-                  {getFirstImage(p.imagen) ? <img src={getFirstImage(p.imagen)} className="h-full w-full object-cover"/> : <PackageOpen className="w-full h-full p-2 text-gray-300"/>}
-=======
                 <div className="h-12 w-12 bg-white flex-shrink-0 border rounded overflow-hidden">
                   <ProductImage src={p.imagen} alt={p.nombre} className="h-full w-full object-cover" fallbackSize={24} fallbackIcon="package" />
->>>>>>> PruebaLocal
                 </div>
                 <div className="flex-1">
                   <h4 className="font-bold text-gray-800 line-clamp-1">{p.nombre}</h4>

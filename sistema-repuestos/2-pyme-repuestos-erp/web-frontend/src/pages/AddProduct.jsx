@@ -28,6 +28,7 @@ const AddProduct = () => {
   const [saving, setSaving] = useState(false);
   const [newDistName, setNewDistName] = useState('');
   const [showNewDist, setShowNewDist] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(Date.now());
 
   useEffect(() => {
     fetchDistribuidores();
@@ -40,13 +41,13 @@ const AddProduct = () => {
         } catch(e) { parsedImages = p.imagen ? [p.imagen] : []; }
 
         setForm({
-          codigo_barras: p.codigo_barras,
-          nombre: p.nombre,
-          descripcion: p.descripcion,
+          codigo_barras: p.codigo_barras || '',
+          nombre: p.nombre || '',
+          descripcion: p.descripcion || '',
           componentes: p.componentes || '',
-          precio: p.precio,
-          stock: p.stock,
-          distribuidor_id: p.distribuidor_id,
+          precio: p.precio || 0,
+          stock: p.stock || 0,
+          distribuidor_id: p.distribuidor_id || '',
           imagen: parsedImages
         });
         setCompatibilidad(p.compatibilidad || []);
@@ -270,6 +271,7 @@ const AddProduct = () => {
               ) : (
                 <div className="mb-3">
                   <input
+                    key={fileInputKey}
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
@@ -281,7 +283,7 @@ const AddProduct = () => {
                         };
                         reader.readAsDataURL(file);
                       }
-                      e.target.value = null;
+                      setFileInputKey(Date.now()); // Re-render forces a brand new input instead of mutating .value
                     }}
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#003366] file:text-white hover:file:bg-[#002244] cursor-pointer"
                   />
