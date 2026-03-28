@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Minus, X, PackageOpen, Save } from 'lucide-react';
 import apiClient from '../api/axios';
+<<<<<<< HEAD
 import { getFirstImage } from './Home';
+=======
+import { useTicket } from '../context/TicketContext';
+import ProductImage from '../components/ProductImage';
+>>>>>>> PruebaLocal
 
 const CreateTicket = () => {
   const navigate = useNavigate();
-  const [ticketNo, setTicketNo] = useState(`T-${Date.now().toString().slice(-6)}`);
+  const { ticketNo, setTicketNo, cart, addToCart, updateCant, removeCart, total, handleSave, saving } = useTicket();
+  
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [cart, setCart] = useState([]); // { product_id, dbProd_id, nombre, precio, maxStock, image, cantidad }
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (search.length > 2) {
@@ -22,56 +26,10 @@ const CreateTicket = () => {
     }
   }, [search]);
 
-  const addToCart = (prod) => {
-    const exist = cart.find(c => c.producto_id === prod.id);
-    if (!exist) {
-      setCart([...cart, {
-        producto_id: prod.id,
-        nombre: prod.nombre,
-        precio_unitario: Number(prod.precio),
-        stockMax: prod.stock,
-        imagen: prod.imagen,
-        cantidad: 1
-      }]);
-    }
+  const handleAddLocal = (prod) => {
+    addToCart(prod);
     setSearch('');
     setSearchResults([]);
-  };
-
-  const updateCant = (id, delta) => {
-    setCart(cart.map(c => {
-      if (c.producto_id === id) {
-        const newC = parseInt(c.cantidad) + delta;
-        if (newC > 0 && newC <= c.stockMax) return { ...c, cantidad: newC };
-      }
-      return c;
-    }));
-  };
-
-  const removeCart = (id) => setCart(cart.filter(c => c.producto_id !== id));
-
-  const total = cart.reduce((acc, c) => acc + (c.precio_unitario * c.cantidad), 0);
-
-  const handleSave = async () => {
-    if (cart.length === 0) return alert('Debes agregar productos al ticket');
-    setSaving(true);
-    try {
-      const payload = {
-        numero: ticketNo,
-        fecha: new Date().toISOString().split('T')[0],
-        productos: cart
-      };
-      const res = await apiClient.post('/tickets', payload);
-      
-      if (res.data.eliminados && res.data.eliminados.length > 0) {
-        alert(`¡Aviso!\nEl stock de los siguientes productos llegó a 0 y fueron eliminados del catálogo automáticamente: \n- ${res.data.eliminados.join('\n- ')}`);
-      }
-      navigate('/tickets');
-    } catch (err) {
-      alert(err.response?.data?.error || 'Error al guardar el ticket');
-    } finally {
-      setSaving(false);
-    }
   };
 
   return (
@@ -98,11 +56,16 @@ const CreateTicket = () => {
             {searchResults.map(p => (
               <div 
                 key={p.id} 
-                onClick={() => addToCart(p)}
+                onClick={() => handleAddLocal(p)}
                 className="flex items-center gap-4 bg-gray-50 border border-gray-200 p-3 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition"
               >
+<<<<<<< HEAD
                 <div className="h-12 w-12 bg-white flex-shrink-0 border rounded">
                   {getFirstImage(p.imagen) ? <img src={getFirstImage(p.imagen)} className="h-full w-full object-cover"/> : <PackageOpen className="w-full h-full p-2 text-gray-300"/>}
+=======
+                <div className="h-12 w-12 bg-white flex-shrink-0 border rounded overflow-hidden">
+                  <ProductImage src={p.imagen} alt={p.nombre} className="h-full w-full object-cover" fallbackSize={24} fallbackIcon="package" />
+>>>>>>> PruebaLocal
                 </div>
                 <div className="flex-1">
                   <h4 className="font-bold text-gray-800 line-clamp-1">{p.nombre}</h4>

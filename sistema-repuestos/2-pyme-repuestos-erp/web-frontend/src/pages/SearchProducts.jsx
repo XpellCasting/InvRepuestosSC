@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, AlertCircle, Eye, Edit } from 'lucide-react';
+import { Search, AlertCircle, Eye, Edit, PlusCircle } from 'lucide-react';
 import apiClient from '../api/axios';
+<<<<<<< HEAD
 import { DistribuidorBadge, getFirstImage } from './Home';
+=======
+import { DistribuidorBadge } from './Home';
+import { useTicket } from '../context/TicketContext';
+import ProductImage from '../components/ProductImage';
+>>>>>>> PruebaLocal
 
 const SearchProducts = () => {
+  const { addToCart } = useTicket();
   const [query, setQuery] = useState('');
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,11 +70,15 @@ const SearchProducts = () => {
           {productos.map(prod => (
             <div key={prod.id} className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden hover:shadow-md transition flex flex-col">
               <div className="relative h-48 bg-gray-100 flex-shrink-0">
+<<<<<<< HEAD
                 {getFirstImage(prod.imagen) ? (
                   <img src={getFirstImage(prod.imagen)} alt={prod.nombre} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">Sin Imagen</div>
                 )}
+=======
+                <ProductImage src={prod.imagen} alt={prod.nombre} className="w-full h-full object-cover" />
+>>>>>>> PruebaLocal
                 <div className="absolute top-2 right-2">
                   <span className={`px-2 py-1 text-xs font-bold rounded-lg shadow-sm ${prod.stock === 0 ? 'bg-[#DC3545] text-white' : prod.stock <= 10 ? 'bg-[#F59E0B] text-white' : 'bg-[#28A745] text-white'}`}>
                     Stock: {prod.stock}
@@ -110,6 +121,13 @@ const SearchProducts = () => {
                       <Eye size={16} /> Ver Detalles
                     </button>
                   </div>
+                  <button 
+                    onClick={() => addToCart(prod)}
+                    disabled={prod.stock === 0}
+                    className="mt-2 w-full flex items-center justify-center gap-1 text-sm bg-[#28A745] hover:bg-green-700 disabled:bg-gray-400 text-white py-2 rounded-lg font-medium transition"
+                  >
+                    <PlusCircle size={16} /> Agregar a Boleta
+                  </button>
                 </div>
               </div>
             </div>

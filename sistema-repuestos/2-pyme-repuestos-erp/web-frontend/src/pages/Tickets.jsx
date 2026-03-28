@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ReceiptText, CheckCircle, Clock, XCircle, FilePlus, Eye, Trash2 } from 'lucide-react';
 import apiClient from '../api/axios';
+import { useAlert } from '../context/AlertContext';
 
 const Tickets = () => {
+  const { showAlert } = useAlert();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState(null); // { title, message, onConfirm }
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,26 +23,36 @@ const Tickets = () => {
       .finally(() => setLoading(false));
   };
 
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      if (confirm(`¿Cambiar estado a ${newStatus}?`)) {
-        await apiClient.put(`/tickets/${id}/estado`, { estado: newStatus });
-        fetchTickets();
+  const handleStatusChange = (id, newStatus) => {
+    setConfirmDialog({
+      title: 'Cambiar Estado',
+      message: `¿Estás seguro de que deseas cambiar el estado a "${newStatus}"?`,
+      onConfirm: async () => {
+        try {
+          await apiClient.put(`/tickets/${id}/estado`, { estado: newStatus });
+          fetchTickets();
+          showAlert(`Estado actualizado a ${newStatus}`, 'success');
+        } catch (e) {
+          showAlert('Error: ' + e.message, 'error');
+        }
       }
-    } catch (e) {
-      alert('Error: ' + e.message);
-    }
+    });
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('¿Estás seguro de que deseas eliminar este ticket de forma permanente?')) {
-      try {
-        await apiClient.delete(`/tickets/${id}`);
-        fetchTickets();
-      } catch (e) {
-        alert('Error al eliminar');
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      title: 'Eliminar Ticket',
+      message: '¿Estás seguro de que deseas eliminar este ticket de forma permanente?',
+      onConfirm: async () => {
+        try {
+          await apiClient.delete(`/tickets/${id}`);
+          fetchTickets();
+          showAlert('Ticket eliminado correctamente', 'success');
+        } catch (e) {
+          showAlert('Error al eliminar', 'error');
+        }
       }
-    }
+    });
   };
 
   return (
@@ -134,6 +147,33 @@ const Tickets = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de Confirmación */}
+      {confirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-fade-in-up">
+            <h3 className="text-xl font-bold text-[#003366] mb-2">{confirmDialog.title}</h3>
+            <p className="text-gray-600 mb-6">{confirmDialog.message}</p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  confirmDialog.onConfirm();
+                  setConfirmDialog(null);
+                }}
+                className="px-4 py-2 bg-[#003366] text-white hover:bg-[#002244] rounded-lg font-medium transition"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

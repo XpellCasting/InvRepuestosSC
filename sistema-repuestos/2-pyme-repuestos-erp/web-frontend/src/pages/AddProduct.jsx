@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Barcode, Save, X, Plus, Trash2, Image as ImageIcon, Link as LinkIcon, Edit } from 'lucide-react';
 import apiClient from '../api/axios';
+import { useAlert } from '../context/AlertContext';
 
 const AddProduct = () => {
+  const { showAlert } = useAlert();
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
@@ -92,13 +94,15 @@ const AddProduct = () => {
 
       if (isEditing) {
         await apiClient.put(`/productos/${id}`, payload);
+        showAlert('Producto actualizado correctamente', 'success');
       } else {
         await apiClient.post(`/productos`, payload);
+        showAlert('Producto añadido correctamente', 'success');
       }
       navigate('/buscar');
     } catch (err) {
       console.error(err);
-      alert('Error al guardar el producto.');
+      showAlert('Error al guardar el producto.', 'error');
     } finally {
       setSaving(false);
     }

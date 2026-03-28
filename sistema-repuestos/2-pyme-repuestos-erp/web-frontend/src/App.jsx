@@ -9,6 +9,7 @@ import AddProduct from './pages/AddProduct';
 import Tickets from './pages/Tickets';
 import CreateTicket from './pages/CreateTicket';
 import TicketDetail from './pages/TicketDetail';
+import { AlertProvider } from './context/AlertContext';
 
 const router = createBrowserRouter([
   {
@@ -29,7 +30,11 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AlertProvider>
+      <RouterProvider router={router} />
+    </AlertProvider>
+  );
 }
 
 export default App;
