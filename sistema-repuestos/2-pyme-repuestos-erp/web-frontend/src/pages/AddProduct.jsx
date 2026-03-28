@@ -82,7 +82,7 @@ const AddProduct = () => {
           showAlert('Producto eliminado correctamente', 'success');
           navigate('/buscar');
         } catch (e) {
-          showAlert('Error al eliminar producto', 'error');
+          showAlert(e.response?.data?.error || 'Error al eliminar producto', 'error');
         }
       }
     });

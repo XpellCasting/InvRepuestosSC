@@ -177,12 +177,25 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // 1. Clear related compatibilities first (no foreign key lock for this)
+    await supabase.from('compatibilidad').delete().eq('producto_id', id);
+
+    // 2. Try to delete the product
     const { error } = await supabase.from('productos').delete().eq('id', id);
-    if (error) throw error;
+    
+    if (error) {
+      if (error.code === '23503') {
+        // Foreign Key Violation (e.g. ticket_productos)
+        return res.status(400).json({ error: 'No se puede eliminar el producto porque pertenece a registros financieros (boletas de venta guardadas).' });
+      }
+      throw error;
+    }
+    
     res.json({ message: 'Producto eliminado' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al eliminar producto' });
+    res.status(500).json({ error: 'Error interno al intentar eliminar el producto' });
   }
 });
 
