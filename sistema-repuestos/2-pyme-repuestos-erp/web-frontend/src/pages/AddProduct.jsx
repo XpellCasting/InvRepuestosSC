@@ -29,6 +29,7 @@ const AddProduct = () => {
   const [newDistName, setNewDistName] = useState('');
   const [showNewDist, setShowNewDist] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(Date.now());
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     fetchDistribuidores();
@@ -52,8 +53,40 @@ const AddProduct = () => {
         });
         setCompatibilidad(p.compatibilidad || []);
       });
+    } else {
+      setForm({
+        codigo_barras: '',
+        nombre: '',
+        descripcion: '',
+        componentes: '',
+        precio: 0,
+        stock: 0,
+        distribuidor_id: '',
+        imagen: []
+      });
+      setCompatibilidad([]);
+      setImageMode('URL');
+      setTempUrl('');
+      setErrors({});
+      setFileInputKey(Date.now());
     }
   }, [id, isEditing]);
+
+  const handleDelete = () => {
+    setConfirmDialog({
+      title: 'Eliminar Producto',
+      message: '¿Estás seguro de que deseas eliminar este producto de forma permanente?',
+      onConfirm: async () => {
+        try {
+          await apiClient.delete(`/productos/${id}`);
+          showAlert('Producto eliminado correctamente', 'success');
+          navigate('/buscar');
+        } catch (e) {
+          showAlert('Error al eliminar producto', 'error');
+        }
+      }
+    });
+  };
 
   const addImage = (imgStr) => {
     if (!imgStr) return;
@@ -374,9 +407,17 @@ const AddProduct = () => {
         )}
 
         <div className="mt-8 flex justify-end gap-3 border-t border-gray-200 pt-6">
+          {isEditing && (
+            <button 
+              onClick={handleDelete}
+              className="mr-auto px-5 py-2 text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 flex items-center gap-2 transition"
+            >
+              <Trash2 size={18} /> Eliminar
+            </button>
+          )}
           <button 
             onClick={() => navigate(-1)}
-            className="px-5 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
+            className="px-5 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition"
           >
             Cancelar
           </button>
@@ -389,6 +430,33 @@ const AddProduct = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal de Confirmación */}
+      {confirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-fade-in-up">
+            <h3 className="text-xl font-bold text-[#003366] mb-2">{confirmDialog.title}</h3>
+            <p className="text-gray-600 mb-6">{confirmDialog.message}</p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  confirmDialog.onConfirm();
+                  setConfirmDialog(null);
+                }}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
